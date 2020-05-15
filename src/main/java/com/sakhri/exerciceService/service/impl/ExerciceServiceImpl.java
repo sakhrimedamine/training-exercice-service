@@ -1,7 +1,9 @@
 package com.sakhri.exerciceService.service.impl;
 
-import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +21,7 @@ import lombok.extern.log4j.Log4j2;
 @Service
 public class ExerciceServiceImpl implements ExerciceService {
 
-	private static final String EXERCICE_NOT_FOUND = "Exercice not found";
+	public static final String EXERCICE_NOT_FOUND = "Exercice not found";
 	
 	@Autowired
 	private ExerciceRepository repo;
@@ -28,53 +30,138 @@ public class ExerciceServiceImpl implements ExerciceService {
 	private ModelMapper modelMapper;
 	
 	@Override
-	public List<Exercice> getAllExercices() {
-        return repo.findAll();
+	public List<ExerciceDto> getAllExercices() {
+
+		log.info("Getting all exercice");
+		
+		List<Exercice> exercies = repo.findAll();
+		
+		log.info("Retrived exercices {}", exercies);
+
+		final List<ExerciceDto> result = exercies.stream()
+												.map(ex -> modelMapper.map(ex, ExerciceDto.class))
+												.collect(Collectors.toList());
+        return result;
 	}
 
 	@Override
-	public Exercice getExercice(Long id) {
-		return repo.findById(id).orElseThrow(() -> 
-						new IllegalArgumentException(EXERCICE_NOT_FOUND));
+	public ExerciceDto getExercice(String exercieID) {
+		
+		log.info("Getting exercices by exercieID {}", exercieID);
+
+		final Exercice findByExerciceID = repo.findByExerciceId(exercieID);
+		
+		log.info("Retrived exercice  {}", findByExerciceID);
+		
+		Optional.ofNullable(findByExerciceID).orElseThrow(
+				() -> new IllegalArgumentException(EXERCICE_NOT_FOUND));
+		
+		final ExerciceDto dto = modelMapper.map(findByExerciceID, ExerciceDto.class);
+		
+		return dto;
 	}
 
 	@Override
-	public boolean createExercice(ExerciceDto dto) throws IOException {
+	public boolean createExercice(ExerciceDto dto) {
+		
 		log.info("creating Exercice with {}", dto);
+		
+		dto.setExerciceId(UUID.randomUUID().toString());
+
 		Exercice exercice = modelMapper.map(dto, Exercice.class);
+		
 		exercice.setMuscle(dto.getMuscle());
+		
+		log.info("Saving Exercice to DB {}", exercice);
+		
 		repo.save(exercice);
+		
+		log.info("Exercice saved succesfully");
+		
 		return true;
 	}
 
 	@Override
-	public boolean updateExercice(ExerciceDto dto) throws IOException{
+	public boolean updateExercice(ExerciceDto dto){
+		
 		log.info("updating Exercice with {}", dto);
-		repo.findById(dto.getId()).orElseThrow(
+		
+		final Exercice exercice = repo.findByExerciceId(dto.getExerciceId());
+		
+		log.info("Retrived exercice  {}", exercice);
+
+		Optional.ofNullable(exercice).orElseThrow(
 				() -> new IllegalArgumentException(EXERCICE_NOT_FOUND));
-		Exercice exercice = modelMapper.map(dto, Exercice.class);
+		
+		exercice.setDescription(dto.getDescription());
+		exercice.setName(dto.getName());
 		exercice.setMuscle(dto.getMuscle());
+		
+		log.info("Updating Exercice to DB {}", exercice);
+
 		repo.save(exercice);
+		
+		log.info("Exercice updated succesfully");
+		
 		return true;
 	}
 
 	@Override
-	public boolean deleteExercice(Long id) {
-		log.info("deleting Exercice with {}", id);
-		Exercice exercice = repo.findById(id).orElseThrow(
+	public boolean deleteExercice(String exerciceID) {
+		
+		log.info("deleting Exercice with {}", exerciceID);
+				
+		final Exercice findByExerciceID = repo.findByExerciceId(exerciceID);
+		
+		log.info("Retrived exercice  {}", findByExerciceID);
+		
+		Optional.ofNullable(findByExerciceID).orElseThrow(
 				() -> new IllegalArgumentException(EXERCICE_NOT_FOUND));
-		repo.delete(exercice);
+		
+		log.info("Deleting Exercice from DB {}");
+		
+		repo.delete(findByExerciceID);
+		
+		log.info("Exercice deleted succesfully");
+		
 		return true;
 	}
 
 	@Override
-	public List<Exercice> getExerciceByMuscle(Muscle muscle) {
-		return repo.findByMuscle(muscle);
+	public List<ExerciceDto> getExerciceByMuscle(Muscle muscle) {
+		
+		log.info("Getting Exercices by muscle {}", muscle);
+		
+		List<Exercice> exercies = repo.findByMuscle(muscle);
+		
+		final List<ExerciceDto> result = exercies.stream()
+												.map(ex -> modelMapper.map(ex, ExerciceDto.class))
+												.collect(Collectors.toList());
+		
+		log.info("Retrived exercices {}", exercies);
+
+        return result;
+        
 	}
 
 	@Override
-	public boolean verifyExercice(Long id) {
-		return repo.findById(id).isPresent() ? true : false;
+	public boolean verifyExercice(String exercieID) {
+		
+		log.info("verifying Exercice by exercieID {}", exercieID);
+		
+		final Exercice findByExerciceID = repo.findByExerciceId(exercieID);
+		
+		log.info("Retrived exercice {}", findByExerciceID);
+
+		return findByExerciceID != null ? true : false;
+	}
+
+	@Override
+	public void deleteAllExercices() {
+		
+		log.info("Deleting all exercices");
+
+		repo.deleteAll();
 	}
 
 }

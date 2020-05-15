@@ -12,4 +12,6 @@ import com.sakhri.exerciceService.model.Exercice;
 public interface ExerciceRepository extends JpaRepository<Exercice, Long>{
 
 	public List<Exercice> findByMuscle(Muscle muscle);
+	public Exercice findByExerciceId(String exerciceID);
+
 }

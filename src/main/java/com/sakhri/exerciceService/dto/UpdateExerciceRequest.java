@@ -14,12 +14,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
-public class ExerciceDto implements Serializable{
+public class UpdateExerciceRequest implements Serializable{
 	
-	private static final long serialVersionUID = 8098665928043753217L;
-		
+	
+	private static final long serialVersionUID = -7606163963483841465L;
+
 	private String exerciceId;
-	
+
 	private String name;
 	
 	private String description;
